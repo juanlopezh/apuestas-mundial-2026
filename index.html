@@ -48,6 +48,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .bnrow input:focus{outline:none;border-color:#1a56db;background:#fff}
 .bsend{padding:9px 18px;border-radius:8px;background:#1a56db;color:#fff;border:none;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;white-space:nowrap}
 .bsend:hover{background:#1444b0}
+.bsend:disabled{opacity:.5;cursor:not-allowed}
 .cmsg{color:#b71c1c;font-size:13px;text-align:center;padding:10px;background:#fdecea;border-radius:8px;font-weight:500}
 .hlocked{display:flex;flex-direction:column;align-items:center;padding:3rem 1rem;gap:16px;background:#fff;border-radius:12px;border:1px solid #e0e0e0}
 .hlocked-icon{font-size:48px}
@@ -60,10 +61,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .perr{font-size:12px;color:#b71c1c;margin-top:6px;min-height:18px;text-align:center}
 .hhdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
 .hhdr h2{font-size:17px;font-weight:700;color:#1a1a1a}
-.hactions{display:flex;gap:8px}
+.hactions{display:flex;gap:8px;flex-wrap:wrap}
 .blogout{padding:6px 13px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:12px;color:#555;font-family:inherit}
 .bxls{padding:7px 15px;border-radius:8px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit}
 .bxls:hover{background:#d0edd2}
+.breload{padding:7px 15px;border-radius:8px;background:#e8f0fe;color:#1a56db;border:1px solid #93b4f7;cursor:pointer;font-size:12px;font-weight:700;font-family:inherit}
+.breload:hover{background:#d0e0fc}
 .sbox{width:100%;padding:9px 12px;border-radius:8px;border:1px solid #ccc;color:#1a1a1a;font-size:13px;margin-bottom:1rem;font-family:inherit}
 .sbox:focus{outline:none;border-color:#1a56db}
 .hempty{font-size:14px;color:#aaa;text-align:center;padding:2.5rem;background:#fff;border-radius:12px}
@@ -77,6 +80,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sl{font-size:12px;color:#888;margin-bottom:4px}
 .sv{font-size:24px;font-weight:700;color:#1a1a1a}
 .toast{background:#e8f5e9;color:#2e7d32;text-align:center;padding:11px;font-size:13px;border-radius:8px;margin-bottom:1rem;border:1px solid #a5d6a7;font-weight:600}
+.toast-err{background:#fdecea;color:#b71c1c;text-align:center;padding:11px;font-size:13px;border-radius:8px;margin-bottom:1rem;border:1px solid #f5c6c6;font-weight:600}
+.loading{text-align:center;padding:2rem;color:#888;font-size:13px}
 .panel{display:none}
 .panel.active{display:block}
 </style>
@@ -109,9 +114,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 </div>
 
 <script>
+// ─── CONFIGURACION ────────────────────────────────────────────────
 // SHA-256 de la palabra "mundial"
 const ADMIN_HASH = "3c34e3c0d50c764e59b3b1a9fc36405bcd68560144da22b3f8569d6cadeb9d00";
-const API_URL = "https://script.google.com/macros/s/AKfycby4D4N9XaP71i-N-q6ZNpOu9bYlf6Ny72k5m_G7iAdWwIP0kat87hr68c4AKL5_PGiT9g/exec";
+
+// const API_URL = "https://script.google.com/macros/s/AKfycbxHtWgYeq43hyIx-5m9P54qmUtOSEwKQ_J937TYjbEzWtgG4YSN0mG7B0I8xT5IJp2nZw/exec";
+// ─────────────────────────────────────────────────────────────────
 
 const FLAGS = {
   'Mexico':'&#127474;&#127485;','South Africa':'&#127487;&#127462;','South Korea':'&#127472;&#127479;','Czechia':'&#127464;&#127487;',
@@ -248,13 +256,15 @@ const FIN=[
 
 let selMatch=null, history=[], currentTab='grupo', adminOK=false;
 
+// ─── SHA-256 ──────────────────────────────────────────────────────
 async function sha256(s){
   const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
   return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
 }
 
+// ─── UTILIDADES ───────────────────────────────────────────────────
 function isClosed(m){
-  return new Date() >= new Date(new Date(m.date).getTime() - 30*60*1000);
+  return new Date()>=new Date(new Date(m.date).getTime()-30*60*1000);
 }
 
 function fmtDate(d){
@@ -262,20 +272,78 @@ function fmtDate(d){
   const dias=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
   const meses=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   const h=dt.getHours().toString().padStart(2,'0');
-  const m=dt.getMinutes().toString().padStart(2,'0');
-  return dias[dt.getDay()]+' '+dt.getDate()+' '+meses[dt.getMonth()]+' &middot; '+h+':'+m+' (Col)';
+  const mn=dt.getMinutes().toString().padStart(2,'0');
+  return dias[dt.getDay()]+' '+dt.getDate()+' '+meses[dt.getMonth()]+' &middot; '+h+':'+mn+' (Col)';
 }
 
+function showToast(msg, isError){
+  var t=document.createElement('div');
+  t.className=isError?'toast-err':'toast';
+  t.innerHTML=msg;
+  var wrap=document.querySelector('.wrap');
+  // insertar despues del header y tabs (posicion 2)
+  var ref=wrap.children[2]||null;
+  wrap.insertBefore(t,ref);
+  setTimeout(function(){if(t.parentNode)t.remove();},3000);
+}
+
+// ─── GOOGLE SHEETS: GUARDAR ───────────────────────────────────────
+function saveToSheets(entry){
+  fetch(API_URL,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(entry)
+  }).catch(function(err){
+    console.warn('Error enviando a Sheets:',err);
+  });
+}
+
+// ─── GOOGLE SHEETS: CARGAR HISTORIAL ─────────────────────────────
+function loadFromSheets(callback){
+  var url=API_URL+'?action=get&t='+Date.now();
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(resp){
+      if(resp && resp.data && resp.data.length>1){
+        // fila 0 = encabezados, saltar
+        history=resp.data.slice(1).map(function(row){
+          return {
+            match:     row[0]||'',
+            homeTeam:  row[1]||'',
+            scoreHome: row[2]||0,
+            scoreAway: row[3]||0,
+            awayTeam:  row[4]||'',
+            name:      row[5]||'',
+            date:      row[6]||'',
+            time:      row[7]||'',
+            phase:     row[8]||'',
+            venue:     row[9]||''
+          };
+        }).filter(function(r){return r.match!=='';});
+      } else {
+        history=[];
+      }
+      if(callback) callback();
+    })
+    .catch(function(err){
+      console.warn('No se pudo cargar historial de Sheets:',err);
+      history=[];
+      if(callback) callback();
+    });
+}
+
+// ─── RENDER TARJETAS ─────────────────────────────────────────────
 function card(m){
-  const cl=isClosed(m), sel=selMatch&&selMatch.id===m.id;
-  const badge=cl
-    ? '<span class="cbadge">&#128274; Cerrada</span>'
-    : '<span class="obadge">&#128275; Abierta</span>';
-  const grp=m.group
-    ? '<span class="gbadge">Grupo '+m.group+'</span>'
-    : (m.phase ? '<span class="gbadge">'+m.phase+'</span>' : '');
-  const onclick=cl ? '' : 'onclick="pick('+m.id+')"';
-  return '<div class="mcard'+(sel?' sel':'')+(cl?' cls':'')+'" '+onclick+'>'
+  var cl=isClosed(m), sel=selMatch&&selMatch.id===m.id;
+  var badge=cl
+    ?'<span class="cbadge">&#128274; Cerrada</span>'
+    :'<span class="obadge">&#128275; Abierta</span>';
+  var grp=m.group
+    ?'<span class="gbadge">Grupo '+m.group+'</span>'
+    :(m.phase?'<span class="gbadge">'+m.phase+'</span>':'');
+  var oc=cl?'':'onclick="pick('+m.id+')"';
+  return '<div class="mcard'+(sel?' sel':'')+(cl?' cls':'')+'" '+oc+'>'
     +'<div class="mrow">'
     +'<span class="fl">'+fl(m.home)+'</span>'
     +'<span class="tn">'+m.home+'</span>'
@@ -291,8 +359,9 @@ function card(m){
     +'</div>';
 }
 
+// ─── PANEL DE APUESTA ─────────────────────────────────────────────
 function betPanel(){
-  const m=selMatch;
+  var m=selMatch;
   if(isClosed(m)) return '<div class="bpanel"><div class="cmsg">&#9940; Apuestas cerradas &mdash; el partido inicia en menos de 30 minutos.</div></div>';
   return '<div class="bpanel">'
     +'<h3>&#127922; Registrar apuesta</h3>'
@@ -302,11 +371,14 @@ function betPanel(){
     +'<div class="bdiv">&mdash;</div>'
     +'<div class="btb"><div class="btlbl">'+fl(m.away)+' '+m.away+'</div><input type="number" min="0" max="20" value="0" id="sa" class="sinp"/></div>'
     +'</div>'
-    +'<div class="bnrow"><input type="text" id="bn" placeholder="Tu nombre o alias..."/>'
-    +'<button class="bsend" onclick="submitBet()">&#9993; Enviar</button></div>'
+    +'<div class="bnrow">'
+    +'<input type="text" id="bn" placeholder="Tu nombre o alias..."/>'
+    +'<button class="bsend" id="btn-send" onclick="submitBet()">&#9993; Enviar</button>'
+    +'</div>'
     +'</div>';
 }
 
+// ─── RENDER GRUPOS ────────────────────────────────────────────────
 function renderGroups(){
   var groups={};
   GRP.forEach(function(m){if(!groups[m.group])groups[m.group]=[];groups[m.group].push(m);});
@@ -329,34 +401,40 @@ function renderList(pid,arr){
   document.getElementById('panel-'+pid).innerHTML=h;
 }
 
-async function loadHistory(){try{const r=await fetch(API_URL);history=await r.json();renderHist();}catch(err){alert("Error cargando historial");console.error(err);}}
-
+// ─── RENDER HISTORIAL (SOLO ADMIN) ───────────────────────────────
 function renderHist(){
   var el=document.getElementById('panel-hist');
   if(!adminOK){
     el.innerHTML='<div class="hlocked">'
       +'<div class="hlocked-icon">&#128274;</div>'
-      +'<p>Secci&oacute;n privada.<br>Solo el administrador puede ver el historial completo de apuestas.</p>'
+      +'<p><strong>Seccion privada</strong><br>Solo el administrador puede ver el historial completo de apuestas.</p>'
       +'<div style="width:100%;max-width:340px">'
-      +'<div class="prow"><input type="password" id="pi" placeholder="Contrasena admin..." onkeydown="if(event.key===\'Enter\')tryLogin()"/>'
-      +'<button class="bunlock" onclick="tryLogin()">&#128275; Entrar</button></div>'
+      +'<div class="prow">'
+      +'<input type="password" id="pi" placeholder="Contrasena admin..." onkeydown="if(event.key===\'Enter\')tryLogin()"/>'
+      +'<button class="bunlock" onclick="tryLogin()">&#128275; Entrar</button>'
+      +'</div>'
       +'<div class="perr" id="pe"></div>'
       +'</div></div>';
     return;
   }
+
   var term='';
   var hs=document.getElementById('hs');
   if(hs) term=hs.value||'';
+
   var fil=history.filter(function(h){
     return h.name.toLowerCase().indexOf(term.toLowerCase())>=0
       || h.match.toLowerCase().indexOf(term.toLowerCase())>=0;
   });
+
   var personas=[...new Set(history.map(function(h){return h.name;}))].length;
   var partidos=[...new Set(history.map(function(h){return h.match;}))].length;
+
   var html='<div class="hhdr">'
     +'<h2>&#128737; Historial admin</h2>'
     +'<div class="hactions">'
-    +'<button class="bxls" onclick="exportCSV()">&#128196; Exportar Excel/CSV</button>'
+    +'<button class="breload" onclick="reloadHist()">&#8635; Actualizar</button>'
+    +'<button class="bxls" onclick="exportCSV()">&#128196; Exportar CSV</button>'
     +'<button class="blogout" onclick="logout()">&#128274; Salir</button>'
     +'</div></div>'
     +'<div class="stats">'
@@ -365,17 +443,21 @@ function renderHist(){
     +'<div class="sc"><div class="sl">Partidos apostados</div><div class="sv">'+partidos+'</div></div>'
     +'</div>'
     +'<input type="text" class="sbox" id="hs" placeholder="Buscar por nombre o partido..." oninput="filterH(this.value)" value="'+term+'">';
+
   if(fil.length===0){
     html+='<p class="hempty">'+(term?'Sin resultados para "'+term+'"':'No hay apuestas registradas aun.')+'</p>';
   } else {
     fil.slice().reverse().forEach(function(h){
       html+='<div class="hi">'
-        +'<div class="hihdr"><span class="himatch">'+h.match+'</span><span class="hiscore">'+h.scoreHome+' &ndash; '+h.scoreAway+'</span></div>'
+        +'<div class="hihdr">'
+        +'<span class="himatch">'+h.match+'</span>'
+        +'<span class="hiscore">'+h.scoreHome+' &ndash; '+h.scoreAway+'</span>'
+        +'</div>'
         +'<div class="himeta">'
         +'<span>&#128100; '+h.name+'</span>'
         +'<span>&#128197; '+h.date+'</span>'
         +'<span>&#128336; '+h.time+'</span>'
-        +'<span>&#127937; '+h.phase+'</span>'
+        +'<span>&#127937; '+(h.phase||'')+'</span>'
         +'</div></div>';
     });
   }
@@ -384,19 +466,32 @@ function renderHist(){
 
 function filterH(v){renderHist();var e=document.getElementById('hs');if(e)e.value=v;}
 
+function reloadHist(){
+  var el=document.getElementById('panel-hist');
+  el.innerHTML='<p class="loading">&#8635; Cargando apuestas desde Google Sheets...</p>';
+  loadFromSheets(function(){renderHist();});
+}
+
+// ─── LOGIN / LOGOUT ──────────────────────────────────────────────
 function tryLogin(){
   var val=(document.getElementById('pi')||{value:''}).value;
   sha256(val).then(function(h){
-    if(h===ADMIN_HASH){adminOK=true;renderHist();}
-    else{
+    if(h===ADMIN_HASH){
+      adminOK=true;
+      // Al entrar, cargar historial fresco desde Sheets
+      var el=document.getElementById('panel-hist');
+      el.innerHTML='<p class="loading">&#8635; Cargando apuestas desde Google Sheets...</p>';
+      loadFromSheets(function(){renderHist();});
+    } else {
       var e=document.getElementById('pe');
       if(e){e.textContent='Contrasena incorrecta. Intenta de nuevo.';document.getElementById('pi').value='';}
     }
   });
 }
 
-function logout(){adminOK=false;renderHist();}
+function logout(){adminOK=false;history=[];renderHist();}
 
+// ─── SELECCIONAR PARTIDO ─────────────────────────────────────────
 function pick(id){
   var all=GRP.concat(R32,R16,QF,SF,FIN);
   var m=null;
@@ -406,43 +501,65 @@ function pick(id){
   refresh();
 }
 
+// ─── ENVIAR APUESTA ───────────────────────────────────────────────
 function submitBet(){
   var name=(document.getElementById('bn')||{value:''}).value.trim();
   var sh=parseInt((document.getElementById('sh')||{value:'0'}).value,10);
   var sa=parseInt((document.getElementById('sa')||{value:'0'}).value,10);
   if(!name){alert('Por favor escribe tu nombre o alias.');return;}
+
   var now=new Date();
   var all=GRP.concat(R32,R16,QF,SF,FIN);
   var m=null;
   for(var i=0;i<all.length;i++){if(all[i].id===selMatch.id){m=all[i];break;}}
-  history.push({
-    match:selMatch.home+' vs '+selMatch.away,
-    name:name,
-    scoreHome:isNaN(sh)?0:sh,
-    scoreAway:isNaN(sa)?0:sa,
-    date:now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
-    time:now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
-    phase:m?(m.phase||(m.group?'Grupos':'')):'',
-    venue:m?m.venue:''
+
+  var entry={
+    match:     selMatch.home+' vs '+selMatch.away,
+    homeTeam:  selMatch.home,
+    scoreHome: isNaN(sh)?0:sh,
+    scoreAway: isNaN(sa)?0:sa,
+    awayTeam:  selMatch.away,
+    name:      name,
+    date:      now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
+    time:      now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
+    phase:     m?(m.phase||(m.group?'Grupos':'')):'',
+    venue:     m?m.venue:''
+  };
+
+  // Bloquear boton mientras envia
+  var btn=document.getElementById('btn-send');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+
+  // Enviar a Google Sheets
+  fetch(API_URL,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(entry)
+  }).then(function(){
+    selMatch=null;
+    showToast('&#10003; Apuesta registrada correctamente en Google Sheets.',false);
+    refresh();
+  }).catch(function(){
+    selMatch=null;
+    showToast('&#9888; Apuesta guardada localmente (sin conexion a Sheets).',true);
+    refresh();
   });
+
   selMatch=null;
-  var t=document.createElement('div');
-  t.className='toast';
-  t.innerHTML='&#10003; Apuesta registrada correctamente.';
-  var wrap=document.querySelector('.wrap');
-  wrap.insertBefore(t,wrap.children[2]);
-  setTimeout(function(){t.remove();},2500);
   refresh();
 }
 
+// ─── EXPORTAR CSV ────────────────────────────────────────────────
 function exportCSV(){
   if(history.length===0){alert('No hay apuestas para exportar.');return;}
   var rows=[['Partido','Equipo Local','Marcador Local','Marcador Visitante','Equipo Visitante','Participante','Fecha','Hora','Fase','Sede']];
   history.forEach(function(h){
-    var parts=h.match.split(' vs ');
-    rows.push([h.match,parts[0]||'',h.scoreHome,h.scoreAway,parts[1]||'',h.name,h.date,h.time,h.phase||'',h.venue||'']);
+    rows.push([h.match,h.homeTeam||'',h.scoreHome,h.scoreAway,h.awayTeam||'',h.name,h.date,h.time,h.phase||'',h.venue||'']);
   });
-  var csv=rows.map(function(r){return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var csv=rows.map(function(r){
+    return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');
+  }).join('\n');
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -450,6 +567,7 @@ function exportCSV(){
   URL.revokeObjectURL(url);
 }
 
+// ─── NAVEGACION ───────────────────────────────────────────────────
 function showTab(t){
   currentTab=t;
   var tabs=['grupo','r32','r16','qf','sf','fin','hist'];
@@ -463,15 +581,16 @@ function showTab(t){
 }
 
 function refresh(){
-  if(currentTab==='grupo')renderGroups();
-  else if(currentTab==='r32')renderList('r32',R32);
-  else if(currentTab==='r16')renderList('r16',R16);
-  else if(currentTab==='qf')renderList('qf',QF);
-  else if(currentTab==='sf')renderList('sf',SF);
-  else if(currentTab==='fin')renderList('fin',FIN);
-  else renderHist();
+  if(currentTab==='grupo')      renderGroups();
+  else if(currentTab==='r32')   renderList('r32',R32);
+  else if(currentTab==='r16')   renderList('r16',R16);
+  else if(currentTab==='qf')    renderList('qf',QF);
+  else if(currentTab==='sf')    renderList('sf',SF);
+  else if(currentTab==='fin')   renderList('fin',FIN);
+  else                          renderHist();
 }
 
+// ─── INICIO ───────────────────────────────────────────────────────
 renderGroups();
 </script>
 </body>
