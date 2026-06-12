@@ -381,16 +381,25 @@ function betPanel(){
 
 // ─── RENDER GRUPOS ────────────────────────────────────────────────
 function renderGroups(){
-  var groups={};
-  GRP.forEach(function(m){if(!groups[m.group])groups[m.group]=[];groups[m.group].push(m);});
+  var partidos = [...GRP].sort((a,b)=>
+    new Date(a.date) - new Date(b.date)
+  );
+
   var h='';
-  if(selMatch&&currentTab==='grupo') h+=betPanel();
-  Object.keys(groups).sort().forEach(function(g){
-    h+='<div class="phase-lbl">Grupo '+g+'</div><div class="mlist">';
-    groups[g].forEach(function(m){h+=card(m);});
-    h+='</div>';
+
+  if(selMatch && currentTab==='grupo'){
+    h += betPanel();
+  }
+
+  h += '<div class="mlist">';
+
+  partidos.forEach(function(m){
+    h += card(m);
   });
-  document.getElementById('panel-grupo').innerHTML=h;
+
+  h += '</div>';
+
+  document.getElementById('panel-grupo').innerHTML = h;
 }
 
 function renderList(pid,arr){
