@@ -503,12 +503,37 @@ function logout(){adminOK=false;history=[];renderHist();}
 
 // ─── SELECCIONAR PARTIDO ─────────────────────────────────────────
 function pick(id){
-  var all=GRP.concat(R32,R16,QF,SF,FIN);
-  var m=null;
-  for(var i=0;i<all.length;i++){if(all[i].id===id){m=all[i];break;}}
-  if(!m||isClosed(m))return;
-  selMatch=m;
+  var all = GRP.concat(R32,R16,QF,SF,FIN);
+  var m = null;
+
+  for(var i=0;i<all.length;i++){
+    if(all[i].id===id){
+      m=all[i];
+      break;
+    }
+  }
+
+  if(!m || isClosed(m)) return;
+
+  selMatch = m;
+
+  // Renderizar nuevamente
   refresh();
+
+  // Esperar a que aparezca el panel
+  setTimeout(function(){
+
+    // Buscar el panel de apuesta
+    var panel = document.querySelector('.bpanel');
+
+    if(panel){
+      panel.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+
+  }, 100);
 }
 
 // ─── ENVIAR APUESTA ───────────────────────────────────────────────
