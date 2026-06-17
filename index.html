@@ -96,6 +96,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     </div>
   </div>
   <div class="tabs" id="tabs">
+    <button class="tab" onclick="showTab('jugados')">Partidos Jugados</button>
     <button class="tab active" onclick="showTab('grupo')">Grupos</button>
     <button class="tab" onclick="showTab('r32')">Ronda de 32</button>
     <button class="tab" onclick="showTab('r16')">Octavos</button>
@@ -104,6 +105,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <button class="tab" onclick="showTab('fin')">Final</button>
     <button class="tab" onclick="showTab('hist')">&#128274; Historial</button>
   </div>
+  <div id="panel-jugados" class="panel"></div>
   <div id="panel-grupo" class="panel active"></div>
   <div id="panel-r32" class="panel"></div>
   <div id="panel-r16" class="panel"></div>
@@ -268,6 +270,12 @@ function isClosed(m){
   return new Date()>=new Date(new Date(m.date).getTime()-30*60*1000);
 }
 
+function isPlayed(m){
+  return new Date() >= new Date(
+    new Date(m.date).getTime() + (60 * 60 * 1000)
+  );
+}
+
 function fmtDate(d){
   const dt=new Date(d);
   const dias=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
@@ -394,12 +402,73 @@ function renderGroups(){
   h += '<div class="mlist">';
 
   partidos.forEach(function(m){
+  if(!isPlayed(m)){
     h += card(m);
-  });
+  }
+});
 
   h += '</div>';
 
   document.getElementById('panel-grupo').innerHTML = h;
+}
+
+
+function renderPlayed(){
+
+  var todos = GRP.concat(R32,R16,QF,SF,FIN);
+
+  var jugados = todos
+    .filter(function(m){
+      return isPlayed(m);
+    })
+    .sort(function(a,b){
+      return new Date(b.date) - new Date(a.date);
+    });
+
+  var h='';
+
+  if(jugados.length===0){
+
+    h='<div class="hempty">No hay partidos jugados todavía.</div>';
+
+  }else{
+
+    h+='<div class="mlist">';
+
+    jugados.forEach(function(m){
+
+      h+='<div class="mcard cls">'
+        +'<div class="mrow">'
+        +'<span class="fl">'+fl(m.home)+'</span>'
+        +'<span class="tn">'+m.home+'</span>'
+        +'<span class="vs">VS</span>'
+        +'<span class="tn r">'+m.away+'</span>'
+        +'<span class="fl">'+fl(m.away)+'</span>'
+        +'</div>'
+
+        +'<div class="mmeta">'
+        +'<span class="mtime">'+fmtDate(m.date)+'</span>'
+
+        +'<div class="badges">'
+
+        +(m.group
+          ? '<span class="gbadge">Grupo '+m.group+'</span>'
+          : '<span class="gbadge">'+(m.phase||'')+'</span>')
+
+        +'<span class="cbadge">Finalizado</span>'
+
+        +'</div>'
+        +'</div>'
+
+        +'<div class="venue">'+m.venue+'</div>'
+        +'</div>';
+
+    });
+
+    h+='</div>';
+  }
+
+  document.getElementById('panel-jugados').innerHTML=h;
 }
 
 function renderList(pid,arr){
@@ -595,7 +664,7 @@ function exportCSV(){
 // ─── NAVEGACION ───────────────────────────────────────────────────
 function showTab(t){
   currentTab=t;
-  var tabs=['grupo','r32','r16','qf','sf','fin','hist'];
+  var tabs=['jugados','grupo','r32','r16','qf','sf','fin','hist'];
   var tabBtns=document.querySelectorAll('.tab');
   var panels=document.querySelectorAll('.panel');
   tabs.forEach(function(p,i){
@@ -606,15 +675,31 @@ function showTab(t){
 }
 
 function refresh(){
-  if(currentTab==='grupo')      renderGroups();
-  else if(currentTab==='r32')   renderList('r32',R32);
-  else if(currentTab==='r16')   renderList('r16',R16);
-  else if(currentTab==='qf')    renderList('qf',QF);
-  else if(currentTab==='sf')    renderList('sf',SF);
-  else if(currentTab==='fin')   renderList('fin',FIN);
-  else                          renderHist();
-}
 
+  if(currentTab==='jugados')
+    renderPlayed();
+
+  else if(currentTab==='grupo')
+    renderGroups();
+
+  else if(currentTab==='r32')
+    renderList('r32',R32);
+
+  else if(currentTab==='r16')
+    renderList('r16',R16);
+
+  else if(currentTab==='qf')
+    renderList('qf',QF);
+
+  else if(currentTab==='sf')
+    renderList('sf',SF);
+
+  else if(currentTab==='fin')
+    renderList('fin',FIN);
+
+  else
+    renderHist();
+}
 // ─── INICIO ───────────────────────────────────────────────────────
 renderGroups();
 </script>
