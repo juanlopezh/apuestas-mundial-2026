@@ -327,7 +327,9 @@ function loadFromSheets(callback){
             date:      row[6]||'',
             time:      row[7]||'',
             phase:     row[8]||'',
-            venue:     row[9]||''
+            venue:     row[9]||'',
+            points:    row[10]||'',
+            winner:    row[12]||''
           };
         }).filter(function(r){return r.match!=='';});
       } else {
@@ -380,8 +382,27 @@ function betPanel(){
     +'<div class="bdiv">&mdash;</div>'
     +'<div class="btb"><div class="btlbl">'+fl(m.away)+' '+m.away+'</div><input type="number" min="0" max="20" value="0" id="sa" class="sinp"/></div>'
     +'</div>'
+    +'<div style="margin-bottom:14px;">'
+    +'<div class="btlbl" style="margin-bottom:6px;">&#127942; Ganador del partido</div>'
+    +'<select id="bw" class="sbox" style="margin-bottom:0">'
+    +'<option value="">-- Selecciona el ganador --</option>'
+    +'<option value="'+m.home+'">'+fl(m.home)+' '+m.home+'</option>'
+    +'<option value="'+m.away+'">'+fl(m.away)+' '+m.away+'</option>'
+    +'</select>'
+    +'</div>'
     +'<div class="bnrow">'
-    +'<input type="text" id="bn" placeholder="Tu nombre o alias..."/>'
+    +'<select id="bn" class="sbox" style="margin-bottom:0;flex:1">'
+    +'<option value="">-- Nombre o alias --</option>'
+    +'<option value="Juan López">Juan López</option>'
+    +'<option value="Rubén">Rubén</option>'
+    +'<option value="Angelica">Angelica</option>'
+    +'<option value="Liz">Liz</option>'
+    +'<option value="Tatiana Montiel">Tatiana Montiel</option>'
+    +'<option value="Johan">Johan</option>'
+    +'<option value="Fernanda">Fernanda</option>'
+    +'<option value="Wi">Wi</option>'
+    +'<option value="Juan">Juan</option>'
+    +'</select>'
     +'<button class="bsend" id="btn-send" onclick="submitBet()">&#9993; Enviar</button>'
     +'</div>'
     +'</div>';
@@ -534,6 +555,7 @@ function renderHist(){
         +'</div>'
         +'<div class="himeta">'
         +'<span>&#128100; '+h.name+'</span>'
+        +'<span>&#127942; '+(h.winner||'—')+'</span>'
         +'<span>&#128197; '+h.date+'</span>'
         +'<span>&#128336; '+h.time+'</span>'
         +'<span>&#127937; '+(h.phase||'')+'</span>'
@@ -608,9 +630,11 @@ function pick(id){
 // ─── ENVIAR APUESTA ───────────────────────────────────────────────
 function submitBet(){
   var name=(document.getElementById('bn')||{value:''}).value.trim();
+  var winner=(document.getElementById('bw')||{value:''}).value.trim();
   var sh=parseInt((document.getElementById('sh')||{value:'0'}).value,10);
   var sa=parseInt((document.getElementById('sa')||{value:'0'}).value,10);
-  if(!name){alert('Por favor escribe tu nombre o alias.');return;}
+  if(!name){alert('Por favor selecciona tu nombre o alias.');return;}
+  if(!winner){alert('Por favor selecciona el ganador del partido.');return;}
 
   var now=new Date();
   var all=GRP.concat(R32,R16,QF,SF,FIN);
@@ -627,7 +651,9 @@ function submitBet(){
     date:      now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
     time:      now.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),
     phase:     m?(m.phase||(m.group?'Grupos':'')):'',
-    venue:     m?m.venue:''
+    venue:     m?m.venue:'',
+    points:    '',
+    winner:    winner
   };
 
   // Enviar a Google Sheets (no-cors: se dispara y no espera respuesta)
@@ -647,9 +673,9 @@ function submitBet(){
 // ─── EXPORTAR CSV ────────────────────────────────────────────────
 function exportCSV(){
   if(history.length===0){alert('No hay apuestas para exportar.');return;}
-  var rows=[['Partido','Equipo Local','Marcador Local','Marcador Visitante','Equipo Visitante','Participante','Fecha','Hora','Fase','Sede']];
+  var rows=[['Partido','Equipo Local','Marcador Local','Marcador Visitante','Equipo Visitante','Participante','Fecha','Hora','Fase','Sede','Puntos','Ganador']];
   history.forEach(function(h){
-    rows.push([h.match,h.homeTeam||'',h.scoreHome,h.scoreAway,h.awayTeam||'',h.name,h.date,h.time,h.phase||'',h.venue||'']);
+    rows.push([h.match,h.homeTeam||'',h.scoreHome,h.scoreAway,h.awayTeam||'',h.name,h.date,h.time,h.phase||'',h.venue||'',h.points||'',h.winner||'']);
   });
   var csv=rows.map(function(r){
     return r.map(function(c){return '"'+String(c).replace(/"/g,'""')+'"';}).join(',');
