@@ -121,7 +121,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 const ADMIN_HASH = "3c34e3c0d50c764e59b3b1a9fc36405bcd68560144da22b3f8569d6cadeb9d00";
 
 // URL de tu Google Apps Script — reemplaza con la tuya si la regeneras
-const API_URL = "https://script.google.com/macros/s/AKfycbxHtWgYeq43hyIx-5m9P54qmUtOSEwKQ_J937TYjbEzWtgG4YSN0mG7B0I8xT5IJp2nZw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxRLMXdDpzXxiCPcs3JAt5IcxialDz2WGDqw4hwGB4KZLh9QrJG4K1jYzfQaubewZdX4g/exec";
 // ─────────────────────────────────────────────────────────────────
 
 const FLAGS = {
@@ -656,12 +656,13 @@ function submitBet(){
     winner:    winner
   };
 
-  // Enviar a Google Sheets (no-cors: se dispara y no espera respuesta)
-  fetch(API_URL,{
-    method:'POST',
-    mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(entry)
+  // Enviar a Google Sheets
+  var params = Object.keys(entry).map(function(k){
+    return encodeURIComponent(k)+'='+encodeURIComponent(entry[k]);
+  }).join('&');
+  fetch(API_URL+'?'+params+'&t='+Date.now(),{
+    method:'GET',
+    mode:'no-cors'
   }).catch(function(err){console.warn('Sheets error:',err);});
 
   // Continuar inmediatamente sin esperar respuesta
