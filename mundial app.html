@@ -656,12 +656,13 @@ function submitBet(){
     winner:    winner
   };
 
-  // Enviar a Google Sheets (no-cors: se dispara y no espera respuesta)
+  // Enviar a Google Sheets
+  var params = 'data='+encodeURIComponent(JSON.stringify(entry));
   fetch(API_URL,{
     method:'POST',
     mode:'no-cors',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(entry)
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:params
   }).catch(function(err){console.warn('Sheets error:',err);});
 
   // Continuar inmediatamente sin esperar respuesta
