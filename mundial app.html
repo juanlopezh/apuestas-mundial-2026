@@ -657,12 +657,11 @@ function submitBet(){
   };
 
   // Enviar a Google Sheets
-  var params = Object.keys(entry).map(function(k){
-    return encodeURIComponent(k)+'='+encodeURIComponent(entry[k]);
-  }).join('&');
-  fetch(API_URL+'?'+params+'&t='+Date.now(),{
-    method:'GET',
-    mode:'no-cors'
+  fetch(API_URL,{
+    method:'POST',
+    mode:'no-cors',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify(entry)
   }).catch(function(err){console.warn('Sheets error:',err);});
 
   // Continuar inmediatamente sin esperar respuesta
