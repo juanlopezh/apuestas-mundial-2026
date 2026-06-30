@@ -276,6 +276,13 @@ function isPlayed(m){
   );
 }
 
+// Partido se mueve a "Jugados" 24 horas después de su inicio
+function isMovedToPlayed(m){
+  return new Date() >= new Date(
+    new Date(m.date).getTime() + (24 * 60 * 60 * 1000)
+  );
+}
+
 function fmtDate(d){
   const dt=new Date(d);
   const dias=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
@@ -440,7 +447,7 @@ function renderPlayed(){
 
   var jugados = todos
     .filter(function(m){
-      return isPlayed(m);
+      return isMovedToPlayed(m);
     })
     .sort(function(a,b){
       return new Date(b.date) - new Date(a.date);
@@ -496,7 +503,9 @@ function renderList(pid,arr){
   var h='';
   if(selMatch&&currentTab===pid) h+=betPanel();
   h+='<div class="mlist">';
-  arr.forEach(function(m){h+=card(m);});
+  arr.forEach(function(m){
+    if(!isMovedToPlayed(m)) h+=card(m);
+  });
   h+='</div>';
   document.getElementById('panel-'+pid).innerHTML=h;
 }
