@@ -97,7 +97,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   </div>
   <div class="tabs" id="tabs">
     <button class="tab" onclick="showTab('jugados')">Partidos Jugados</button>
-    <button class="tab active" onclick="showTab('grupo')">Grupos</button>
+    <button class="tab" onclick="showTab('grupo')">Grupos</button>
     <button class="tab" onclick="showTab('r32')">Ronda de 32</button>
     <button class="tab" onclick="showTab('r16')">Octavos</button>
     <button class="tab" onclick="showTab('qf')">Cuartos</button>
@@ -106,7 +106,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
     <button class="tab" onclick="showTab('hist')">&#128274; Historial</button>
   </div>
   <div id="panel-jugados" class="panel"></div>
-  <div id="panel-grupo" class="panel active"></div>
+  <div id="panel-grupo" class="panel"></div>
   <div id="panel-r32" class="panel"></div>
   <div id="panel-r16" class="panel"></div>
   <div id="panel-qf" class="panel"></div>
@@ -736,7 +736,25 @@ function refresh(){
     renderHist();
 }
 // ─── INICIO ───────────────────────────────────────────────────────
-renderGroups();
+// Detectar la pestaña activa según la fase con partidos pendientes
+function getActiveTab(){
+  var fases=[
+    {id:'grupo', arr:GRP},
+    {id:'r32',   arr:R32},
+    {id:'r16',   arr:R16},
+    {id:'qf',    arr:QF},
+    {id:'sf',    arr:SF},
+    {id:'fin',   arr:FIN}
+  ];
+  for(var i=0;i<fases.length;i++){
+    var pendientes=fases[i].arr.filter(function(m){return !isMovedToPlayed(m);});
+    if(pendientes.length>0) return fases[i].id;
+  }
+  return 'jugados'; // todos terminaron
+}
+
+var tabInicial=getActiveTab();
+showTab(tabInicial);
 </script>
 </body>
 </html>
